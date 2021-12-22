@@ -2,16 +2,14 @@ module Main exposing (Board, Model, Piece(..), init, main, update, view)
 
 import Array exposing (Array)
 import Browser
-import Browser.Dom exposing (Element)
 import Element
-import Element.Background
 import Element.Border
 import Element.Events
 import Element.Font
-import Html exposing (Html, button, div, text)
+import Html exposing (Html)
+import List.Extra
 import Svg
 import Svg.Attributes
-import Task
 
 
 main =
@@ -23,8 +21,12 @@ main =
         }
 
 
+type alias Column =
+    Array Piece
+
+
 type alias Board =
-    Array (Array Piece)
+    Array Column
 
 
 type Piece
@@ -35,7 +37,8 @@ type Piece
 
 
 type Msg
-    = Click Int Int
+    = Click Int
+    | Hover Int
     | Reset
 
 
@@ -44,12 +47,13 @@ type alias Model =
     , boardHeight : Int
     , turn : Bool
     , board : Board
+    , hovering : Maybe Int
     }
 
 
 initBoard : Int -> Int -> Board
 initBoard width height =
-    Array.repeat height <| Array.repeat width EMPTY
+    Array.repeat width (Array.repeat height EMPTY)
 
 
 init : () -> ( Model, Cmd Msg )
@@ -57,40 +61,59 @@ init _ =
     ( { boardWidth = 9
       , boardHeight = 6
       , turn = True
+      , hovering = Nothing
       , board = initBoard 9 6
       }
     , Cmd.none
     )
 
 
-updateBoard : Model -> Board -> Int -> Int -> Board
-updateBoard model board x y =
+dropPiece : Board -> Int -> Piece -> Board
+dropPiece board columnIndex piece =
     let
-        row =
-            Array.get y board
+        column =
+            board
+                |> Array.get columnIndex
                 |> Maybe.withDefault Array.empty
 
-        oldPiece =
-            Array.get x row
-                |> Maybe.withDefault OUTOFBOUNDS
+        height : ( Int, Piece )
+        height =
+            column
+                |> Array.toIndexedList
+                |> List.reverse
+                |> List.Extra.find (\( _, p ) -> p == EMPTY)
+                |> Maybe.withDefault ( 0, OUTOFBOUNDS )
 
-        newPiece =
-            if oldPiece == EMPTY then
-                if model.turn then
-                    RED
+        newColumn =
+            Array.set (Tuple.first height) piece column
 
-                else
-                    BLACK
+        newBoard =
+            -- Only change the board if the is a valid drop
+            if Tuple.second height /= OUTOFBOUNDS then
+                Array.set columnIndex newColumn board
 
             else
-                oldPiece
+                board
     in
-    Array.set y (Array.set x newPiece row) board
+    newBoard
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
+    let
+        currentPiece =
+            if model.turn then
+                RED
+
+            else
+                BLACK
+    in
     case msg of
+        Hover columnIndex ->
+            ( { model | hovering = Just columnIndex }
+            , Cmd.none
+            )
+
         Reset ->
             ( { model
                 | board = initBoard model.boardWidth model.boardHeight
@@ -99,42 +122,17 @@ update msg model =
             , Cmd.none
             )
 
-        Click x y ->
-            let
-                row =
-                    Array.get y model.board
-                        |> Maybe.withDefault Array.empty
-
-                oldPiece =
-                    Array.get x row
-                        |> Maybe.withDefault OUTOFBOUNDS
-
-                rowBelow =
-                    Array.get (y + 1) model.board
-                        |> Maybe.withDefault Array.empty
-
-                oldPieceBelow =
-                    Array.get x rowBelow
-                        |> Maybe.withDefault OUTOFBOUNDS
-            in
-            -- If the piece below is empty, then we move our placement down.
-            if oldPieceBelow == EMPTY then
-                update (Click x (y + 1)) model
-
-            else if oldPiece == EMPTY then
-                ( { model
-                    | turn = not model.turn
-                    , board = updateBoard model model.board x y
-                  }
-                , Cmd.none
-                )
-
-            else
-                ( model, Cmd.none )
+        Click column ->
+            ( { model
+                | board = dropPiece model.board column currentPiece
+                , turn = not model.turn
+              }
+            , Cmd.none
+            )
 
 
 subscriptions : Model -> Sub Msg
-subscriptions model =
+subscriptions _ =
     Sub.none
 
 
@@ -144,30 +142,21 @@ viewCircle color =
         Svg.svg
             [ Svg.Attributes.width "60"
             , Svg.Attributes.height "60"
-            , Svg.Attributes.viewBox <| "0 0 60 60"
             ]
             [ Svg.circle
                 [ Svg.Attributes.cx "30"
                 , Svg.Attributes.cy "30"
                 , Svg.Attributes.r "25"
                 , Svg.Attributes.fill color
-                , Svg.Attributes.stroke "black"
-                , Svg.Attributes.strokeWidth "1"
                 ]
                 []
             ]
 
 
-viewSlot : Model -> Int -> Int -> Element.Element Msg
-viewSlot model x y =
+viewApplyCircle : Piece -> Element.Element Msg
+viewApplyCircle piece =
     let
-        rows =
-            Maybe.withDefault Array.empty (Array.get y model.board)
-
-        piece =
-            Maybe.withDefault EMPTY (Array.get x rows)
-
-        circle =
+        pieceSvg =
             case piece of
                 RED ->
                     viewCircle "red"
@@ -181,21 +170,36 @@ viewSlot model x y =
                 OUTOFBOUNDS ->
                     viewCircle "grey"
     in
-    Element.el
-        [ Element.Events.onClick (Click x y) ]
-        circle
+    Element.el [] pieceSvg
+
+
+viewBoard : Model -> Element.Element Msg
+viewBoard model =
+    let
+        elements =
+            model.board
+                |> Array.toList
+                |> List.indexedMap
+                    (\indexColumn column ->
+                        column
+                            |> Array.toList
+                            |> List.map (\ele -> viewApplyCircle ele)
+                            |> Element.column [ Element.Events.onClick (Click indexColumn) ]
+                    )
+                |> Element.row []
+    in
+    elements
 
 
 viewCurrentTurn : Model -> Element.Element Msg
 viewCurrentTurn model =
     let
         playerText =
-            case model.turn of
-                True ->
-                    "Red"
+            if model.turn then
+                "Red"
 
-                False ->
-                    "Black"
+            else
+                "Black"
     in
     Element.el
         [ Element.width Element.fill
@@ -217,16 +221,6 @@ viewResetButton =
 
 view : Model -> Html Msg
 view model =
-    let
-        boardList =
-            List.map Array.toList (Array.toList model.board)
-
-        boardEl =
-            List.indexedMap (\y row -> List.indexedMap (\x ele -> viewSlot model x y) row) boardList
-
-        theBoard =
-            Element.column [] (List.indexedMap (\y row -> Element.row [] row) boardEl)
-    in
     Element.layout [] <|
         Element.column [ Element.centerX, Element.centerY ]
-            [ viewCurrentTurn model, theBoard, viewResetButton ]
+            [ viewCurrentTurn model, viewBoard model, viewResetButton ]
