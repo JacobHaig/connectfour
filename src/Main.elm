@@ -3,6 +3,7 @@ module Main exposing (Board, Model, Piece(..), init, main, update, view)
 import Array exposing (Array)
 import Browser
 import Element
+import Element.Background
 import Element.Border
 import Element.Events
 import Element.Font
@@ -176,19 +177,31 @@ viewApplyCircle piece =
 viewBoard : Model -> Element.Element Msg
 viewBoard model =
     let
-        elements =
-            model.board
-                |> Array.toList
-                |> List.indexedMap
-                    (\indexColumn column ->
-                        column
-                            |> Array.toList
-                            |> List.map (\ele -> viewApplyCircle ele)
-                            |> Element.column [ Element.Events.onClick (Click indexColumn) ]
-                    )
-                |> Element.row []
+        columnAttr indexColumn =
+            [ Element.Events.onClick (Click indexColumn)
+            , Element.Events.onMouseEnter (Hover indexColumn)
+            , Element.Border.rounded 30
+            , Element.padding 1
+
+            -- If the column is the current hovering column, highlight it
+            , if Maybe.withDefault -1 model.hovering == indexColumn then
+                Element.Background.color (Element.rgba255 255 0 0 0.45)
+
+              else
+                Element.Background.color (Element.rgba255 255 255 255 0.0)
+            ]
     in
-    elements
+    model.board
+        |> Array.toList
+        |> List.indexedMap
+            (\indexColumn column ->
+                column
+                    |> Array.toList
+                    |> List.map (\ele -> viewApplyCircle ele)
+                    |> Element.column
+                        (columnAttr indexColumn)
+            )
+        |> Element.row []
 
 
 viewCurrentTurn : Model -> Element.Element Msg
@@ -223,4 +236,7 @@ view : Model -> Html Msg
 view model =
     Element.layout [] <|
         Element.column [ Element.centerX, Element.centerY ]
-            [ viewCurrentTurn model, viewBoard model, viewResetButton ]
+            [ viewCurrentTurn model
+            , viewBoard model
+            , viewResetButton
+            ]
