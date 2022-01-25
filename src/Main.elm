@@ -8,11 +8,15 @@ import Element.Border
 import Element.Events
 import Element.Font
 import Html exposing (Html)
+import List
 import List.Extra
+import Platform.Cmd exposing (Cmd)
 import Svg
 import Svg.Attributes
+import Task
 
 
+main : Program () Model Msg
 main =
     Browser.element
         { init = init
@@ -41,6 +45,7 @@ type Msg
     = Click Int
     | Hover Int
     | Reset
+    | CheckForWinner
 
 
 type alias Model =
@@ -49,6 +54,7 @@ type alias Model =
     , turn : Bool
     , board : Board
     , hovering : Maybe Int
+    , winner : Maybe Piece
     }
 
 
@@ -64,9 +70,53 @@ init _ =
       , turn = True
       , hovering = Nothing
       , board = initBoard 9 6
+      , winner = Nothing
       }
     , Cmd.none
     )
+
+
+update : Msg -> Model -> ( Model, Cmd Msg )
+update msg model =
+    let
+        currentPiece =
+            if model.turn then
+                RED
+
+            else
+                BLACK
+    in
+    case msg of
+        Hover columnIndex ->
+            ( { model | hovering = Just columnIndex }
+            , Cmd.none
+            )
+
+        Reset ->
+            ( { model
+                | board = initBoard model.boardWidth model.boardHeight
+                , turn = True
+                , hovering = Nothing
+                , winner = Nothing
+              }
+            , Cmd.none
+            )
+
+        Click column ->
+            ( { model
+                | board = dropPiece model.board column currentPiece
+              }
+            , Task.perform (always CheckForWinner) (Task.succeed ())
+              -- This is a hack to force the task to run immediately
+            )
+
+        CheckForWinner ->
+            ( { model
+                | winner = checkForWinner model
+                , turn = not model.turn
+              }
+            , Cmd.none
+            )
 
 
 dropPiece : Board -> Int -> Piece -> Board
@@ -99,37 +149,84 @@ dropPiece board columnIndex piece =
     newBoard
 
 
-update : Msg -> Model -> ( Model, Cmd Msg )
-update msg model =
+checkForWinner : Model -> Maybe Piece
+checkForWinner model =
     let
-        currentPiece =
-            if model.turn then
-                RED
+        board_list =
+            model.board
+                |> Array.map
+                    (\col -> Array.toList col)
+                |> Array.toList
 
-            else
-                BLACK
+        rx x y =
+            -- Horizontal
+            [ Maybe.withDefault OUTOFBOUNDS <| List.Extra.getAt y <| Maybe.withDefault [ OUTOFBOUNDS ] <| List.Extra.getAt (x + 0) board_list
+            , Maybe.withDefault OUTOFBOUNDS <| List.Extra.getAt y <| Maybe.withDefault [ OUTOFBOUNDS ] <| List.Extra.getAt (x + 1) board_list
+            , Maybe.withDefault OUTOFBOUNDS <| List.Extra.getAt y <| Maybe.withDefault [ OUTOFBOUNDS ] <| List.Extra.getAt (x + 2) board_list
+            , Maybe.withDefault OUTOFBOUNDS <| List.Extra.getAt y <| Maybe.withDefault [ OUTOFBOUNDS ] <| List.Extra.getAt (x + 3) board_list
+            ]
+
+        ry x y =
+            -- Vertical
+            [ Maybe.withDefault OUTOFBOUNDS <| List.Extra.getAt (y + 0) <| Maybe.withDefault [ OUTOFBOUNDS ] <| List.Extra.getAt x board_list
+            , Maybe.withDefault OUTOFBOUNDS <| List.Extra.getAt (y + 1) <| Maybe.withDefault [ OUTOFBOUNDS ] <| List.Extra.getAt x board_list
+            , Maybe.withDefault OUTOFBOUNDS <| List.Extra.getAt (y + 2) <| Maybe.withDefault [ OUTOFBOUNDS ] <| List.Extra.getAt x board_list
+            , Maybe.withDefault OUTOFBOUNDS <| List.Extra.getAt (y + 3) <| Maybe.withDefault [ OUTOFBOUNDS ] <| List.Extra.getAt x board_list
+            ]
+
+        d1 x y =
+            -- Diagonal 1
+            [ Maybe.withDefault OUTOFBOUNDS <| List.Extra.getAt (y + 0) <| Maybe.withDefault [ OUTOFBOUNDS ] <| List.Extra.getAt (x + 0) board_list
+            , Maybe.withDefault OUTOFBOUNDS <| List.Extra.getAt (y + 1) <| Maybe.withDefault [ OUTOFBOUNDS ] <| List.Extra.getAt (x + 1) board_list
+            , Maybe.withDefault OUTOFBOUNDS <| List.Extra.getAt (y + 2) <| Maybe.withDefault [ OUTOFBOUNDS ] <| List.Extra.getAt (x + 2) board_list
+            , Maybe.withDefault OUTOFBOUNDS <| List.Extra.getAt (y + 3) <| Maybe.withDefault [ OUTOFBOUNDS ] <| List.Extra.getAt (x + 3) board_list
+            ]
+
+        d2 x y =
+            -- Diagonal 2
+            [ Maybe.withDefault OUTOFBOUNDS <| List.Extra.getAt (y + 3) <| Maybe.withDefault [ OUTOFBOUNDS ] <| List.Extra.getAt (x + 0) board_list
+            , Maybe.withDefault OUTOFBOUNDS <| List.Extra.getAt (y + 2) <| Maybe.withDefault [ OUTOFBOUNDS ] <| List.Extra.getAt (x + 1) board_list
+            , Maybe.withDefault OUTOFBOUNDS <| List.Extra.getAt (y + 1) <| Maybe.withDefault [ OUTOFBOUNDS ] <| List.Extra.getAt (x + 2) board_list
+            , Maybe.withDefault OUTOFBOUNDS <| List.Extra.getAt (y + 0) <| Maybe.withDefault [ OUTOFBOUNDS ] <| List.Extra.getAt (x + 3) board_list
+            ]
+
+        checkforWin : Int -> Int -> Bool
+        checkforWin x y =
+            -- Compare all winning conditions against the coordinates
+            [ rx, ry, d1, d2 ]
+                |> List.map
+                    (\func ->
+                        case func x y of
+                            RED :: RED :: RED :: RED :: [] ->
+                                True
+
+                            BLACK :: BLACK :: BLACK :: BLACK :: [] ->
+                                True
+
+                            _ ->
+                                False
+                    )
+                |> List.any (\t -> t)
+
+        results =
+            List.range 0 model.boardWidth
+                |> List.map
+                    (\x ->
+                        List.range 0 model.boardHeight
+                            |> List.map (\y -> checkforWin x y)
+                            |> List.any (\t -> t)
+                    )
+                |> List.any (\t -> t)
     in
-    case msg of
-        Hover columnIndex ->
-            ( { model | hovering = Just columnIndex }
-            , Cmd.none
-            )
+    if results then
+        if model.turn then
+            Just RED
 
-        Reset ->
-            ( { model
-                | board = initBoard model.boardWidth model.boardHeight
-                , turn = True
-              }
-            , Cmd.none
-            )
+        else
+            Just BLACK
 
-        Click column ->
-            ( { model
-                | board = dropPiece model.board column currentPiece
-                , turn = not model.turn
-              }
-            , Cmd.none
-            )
+    else
+        Nothing
 
 
 subscriptions : Model -> Sub Msg
@@ -165,11 +262,8 @@ viewApplyCircle piece =
                 BLACK ->
                     viewCircle "black"
 
-                EMPTY ->
+                _ ->
                     viewCircle "lightgrey"
-
-                OUTOFBOUNDS ->
-                    viewCircle "grey"
     in
     Element.el [] pieceSvg
 
