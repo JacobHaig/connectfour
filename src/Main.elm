@@ -95,16 +95,18 @@ update msg model =
             )
 
         Click column ->
-            ( if model.winner == Nothing then
-                { model
+            if model.winner == Nothing then
+                ( { model
                     | board = dropPiece model.board column model.turn
-                }
+                  }
+                , Task.perform (always CheckForWinner) (Task.succeed ())
+                  -- This is a hack to force the task to run immediately
+                )
 
-              else
-                model
-            , Task.perform (always CheckForWinner) (Task.succeed ())
-              -- This is a hack to force the task to run immediately
-            )
+            else
+                ( model
+                , Cmd.none
+                )
 
         CheckForWinner ->
             ( { model
