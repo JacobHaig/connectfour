@@ -51,7 +51,7 @@ type Msg
 type alias Model =
     { boardWidth : Int
     , boardHeight : Int
-    , turn : Bool
+    , turn : Piece
     , board : Board
     , hovering : Maybe Int
     , winner : Maybe Piece
@@ -67,7 +67,7 @@ init : () -> ( Model, Cmd Msg )
 init _ =
     ( { boardWidth = 9
       , boardHeight = 6
-      , turn = True
+      , turn = RED
       , hovering = Nothing
       , board = initBoard 9 6
       , winner = Nothing
@@ -78,14 +78,6 @@ init _ =
 
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
-    let
-        currentPiece =
-            if model.turn then
-                RED
-
-            else
-                BLACK
-    in
     case msg of
         Hover columnIndex ->
             ( { model | hovering = Just columnIndex }
@@ -95,7 +87,7 @@ update msg model =
         Reset ->
             ( { model
                 | board = initBoard model.boardWidth model.boardHeight
-                , turn = True
+                , turn = RED
                 , hovering = Nothing
                 , winner = Nothing
               }
@@ -103,9 +95,13 @@ update msg model =
             )
 
         Click column ->
-            ( { model
-                | board = dropPiece model.board column currentPiece
-              }
+            ( if model.winner == Nothing then
+                { model
+                    | board = dropPiece model.board column model.turn
+                }
+
+              else
+                model
             , Task.perform (always CheckForWinner) (Task.succeed ())
               -- This is a hack to force the task to run immediately
             )
@@ -113,7 +109,16 @@ update msg model =
         CheckForWinner ->
             ( { model
                 | winner = checkForWinner model
-                , turn = not model.turn
+                , turn =
+                    case model.turn of
+                        RED ->
+                            BLACK
+
+                        BLACK ->
+                            RED
+
+                        _ ->
+                            Debug.todo "unreachable"
               }
             , Cmd.none
             )
@@ -219,11 +224,7 @@ checkForWinner model =
                 |> List.any (\t -> t)
     in
     if results then
-        if model.turn then
-            Just RED
-
-        else
-            Just BLACK
+        Maybe.Just model.turn
 
     else
         Nothing
@@ -271,15 +272,26 @@ viewApplyCircle piece =
 viewBoard : Model -> Element.Element Msg
 viewBoard model =
     let
+        isHovering indexColumn =
+            Maybe.withDefault -1 model.hovering == indexColumn
+
         columnAttr indexColumn =
             [ Element.Events.onClick (Click indexColumn)
             , Element.Events.onMouseEnter (Hover indexColumn)
-            , Element.Border.rounded 30
+            , Element.Border.rounded 50
             , Element.padding 1
 
             -- If the column is the current hovering column, highlight it
-            , if Maybe.withDefault -1 model.hovering == indexColumn then
-                Element.Background.color (Element.rgba255 255 0 0 0.45)
+            , if isHovering indexColumn then
+                case model.turn of
+                    RED ->
+                        Element.Background.color (Element.rgba255 255 0 0 0.55)
+
+                    BLACK ->
+                        Element.Background.color (Element.rgba255 0 0 0 0.55)
+
+                    _ ->
+                        Element.Background.color (Element.rgba255 255 0 0 0.55)
 
               else
                 Element.Background.color (Element.rgba255 255 255 255 0.0)
@@ -302,11 +314,28 @@ viewCurrentTurn : Model -> Element.Element Msg
 viewCurrentTurn model =
     let
         playerText =
-            if model.turn then
-                "Red"
+            case model.winner of
+                Nothing ->
+                    case model.turn of
+                        RED ->
+                            "Red's turn"
 
-            else
-                "Black"
+                        BLACK ->
+                            "Black's turn"
+
+                        _ ->
+                            Debug.todo "Not implemented"
+
+                Just winner ->
+                    case winner of
+                        RED ->
+                            "Red Wins!"
+
+                        BLACK ->
+                            "Black Wins!"
+
+                        _ ->
+                            Debug.todo "Not implemented"
     in
     Element.el
         [ Element.width Element.fill
