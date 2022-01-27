@@ -45,7 +45,6 @@ type Msg
     = Click Int
     | Hover Int
     | Reset
-    | CheckForWinner
 
 
 type alias Model =
@@ -95,33 +94,34 @@ update msg model =
             )
 
         Click column ->
-            if model.winner == Nothing then
-                ( { model
-                    | board = dropPiece model.board column model.turn
-                  }
-                , Task.perform (always CheckForWinner) (Task.succeed ())
-                  -- This is a hack to force the task to run immediately
-                )
+            let
+                newmodel =
+                    if model.winner == Nothing then
+                        { model
+                            | board = dropPiece model.board column model.turn
+                        }
 
-            else
-                ( model
-                , Cmd.none
-                )
+                    else
+                        model
+            in
+            ( if model.winner == Nothing then
+                { model
+                    | board = newmodel.board
+                    , winner = checkForWinner newmodel
+                    , turn =
+                        case model.turn of
+                            RED ->
+                                BLACK
 
-        CheckForWinner ->
-            ( { model
-                | winner = checkForWinner model
-                , turn =
-                    case model.turn of
-                        RED ->
-                            BLACK
+                            BLACK ->
+                                RED
 
-                        BLACK ->
-                            RED
+                            _ ->
+                                Debug.todo "branch not implemented"
+                }
 
-                        _ ->
-                            Debug.todo "unreachable"
-              }
+              else
+                model
             , Cmd.none
             )
 
@@ -167,35 +167,38 @@ checkForWinner model =
 
         rx x y =
             -- Horizontal
-            [ Maybe.withDefault OUTOFBOUNDS <| List.Extra.getAt y <| Maybe.withDefault [ OUTOFBOUNDS ] <| List.Extra.getAt (x + 0) board_list
-            , Maybe.withDefault OUTOFBOUNDS <| List.Extra.getAt y <| Maybe.withDefault [ OUTOFBOUNDS ] <| List.Extra.getAt (x + 1) board_list
-            , Maybe.withDefault OUTOFBOUNDS <| List.Extra.getAt y <| Maybe.withDefault [ OUTOFBOUNDS ] <| List.Extra.getAt (x + 2) board_list
-            , Maybe.withDefault OUTOFBOUNDS <| List.Extra.getAt y <| Maybe.withDefault [ OUTOFBOUNDS ] <| List.Extra.getAt (x + 3) board_list
+            [ xyHelper x y 0 0
+            , xyHelper x y 0 1
+            , xyHelper x y 0 2
+            , xyHelper x y 0 3
             ]
 
         ry x y =
             -- Vertical
-            [ Maybe.withDefault OUTOFBOUNDS <| List.Extra.getAt (y + 0) <| Maybe.withDefault [ OUTOFBOUNDS ] <| List.Extra.getAt x board_list
-            , Maybe.withDefault OUTOFBOUNDS <| List.Extra.getAt (y + 1) <| Maybe.withDefault [ OUTOFBOUNDS ] <| List.Extra.getAt x board_list
-            , Maybe.withDefault OUTOFBOUNDS <| List.Extra.getAt (y + 2) <| Maybe.withDefault [ OUTOFBOUNDS ] <| List.Extra.getAt x board_list
-            , Maybe.withDefault OUTOFBOUNDS <| List.Extra.getAt (y + 3) <| Maybe.withDefault [ OUTOFBOUNDS ] <| List.Extra.getAt x board_list
+            [ xyHelper x y 0 0
+            , xyHelper x y 1 0
+            , xyHelper x y 2 0
+            , xyHelper x y 3 0
             ]
 
         d1 x y =
             -- Diagonal 1
-            [ Maybe.withDefault OUTOFBOUNDS <| List.Extra.getAt (y + 0) <| Maybe.withDefault [ OUTOFBOUNDS ] <| List.Extra.getAt (x + 0) board_list
-            , Maybe.withDefault OUTOFBOUNDS <| List.Extra.getAt (y + 1) <| Maybe.withDefault [ OUTOFBOUNDS ] <| List.Extra.getAt (x + 1) board_list
-            , Maybe.withDefault OUTOFBOUNDS <| List.Extra.getAt (y + 2) <| Maybe.withDefault [ OUTOFBOUNDS ] <| List.Extra.getAt (x + 2) board_list
-            , Maybe.withDefault OUTOFBOUNDS <| List.Extra.getAt (y + 3) <| Maybe.withDefault [ OUTOFBOUNDS ] <| List.Extra.getAt (x + 3) board_list
+            [ xyHelper x y 0 0
+            , xyHelper x y 1 1
+            , xyHelper x y 2 2
+            , xyHelper x y 3 3
             ]
 
         d2 x y =
             -- Diagonal 2
-            [ Maybe.withDefault OUTOFBOUNDS <| List.Extra.getAt (y + 3) <| Maybe.withDefault [ OUTOFBOUNDS ] <| List.Extra.getAt (x + 0) board_list
-            , Maybe.withDefault OUTOFBOUNDS <| List.Extra.getAt (y + 2) <| Maybe.withDefault [ OUTOFBOUNDS ] <| List.Extra.getAt (x + 1) board_list
-            , Maybe.withDefault OUTOFBOUNDS <| List.Extra.getAt (y + 1) <| Maybe.withDefault [ OUTOFBOUNDS ] <| List.Extra.getAt (x + 2) board_list
-            , Maybe.withDefault OUTOFBOUNDS <| List.Extra.getAt (y + 0) <| Maybe.withDefault [ OUTOFBOUNDS ] <| List.Extra.getAt (x + 3) board_list
+            [ xyHelper x y 3 0
+            , xyHelper x y 2 1
+            , xyHelper x y 1 2
+            , xyHelper x y 0 3
             ]
+
+        xyHelper x y dx dy =
+            Maybe.withDefault OUTOFBOUNDS <| List.Extra.getAt (y + dy) <| Maybe.withDefault [ OUTOFBOUNDS ] <| List.Extra.getAt (x + dx) board_list
 
         checkforWin : Int -> Int -> Bool
         checkforWin x y =

@@ -5233,11 +5233,6 @@ var $author$project$Main$subscriptions = function (_v0) {
 	return $elm$core$Platform$Sub$none;
 };
 var $author$project$Main$BLACK = {$: 'BLACK'};
-var $author$project$Main$CheckForWinner = {$: 'CheckForWinner'};
-var $elm$core$Basics$always = F2(
-	function (a, _v0) {
-		return a;
-	});
 var $author$project$Main$OUTOFBOUNDS = {$: 'OUTOFBOUNDS'};
 var $elm$core$List$any = F2(
 	function (isOkay, list) {
@@ -5337,204 +5332,58 @@ var $author$project$Main$checkForWinner = function (model) {
 				return $elm$core$Array$toList(col);
 			},
 			model.board));
+	var xyHelper = F4(
+		function (x, y, dx, dy) {
+			return A2(
+				$elm$core$Maybe$withDefault,
+				$author$project$Main$OUTOFBOUNDS,
+				A2(
+					$elm_community$list_extra$List$Extra$getAt,
+					y + dy,
+					A2(
+						$elm$core$Maybe$withDefault,
+						_List_fromArray(
+							[$author$project$Main$OUTOFBOUNDS]),
+						A2($elm_community$list_extra$List$Extra$getAt, x + dx, board_list))));
+		});
 	var d1 = F2(
 		function (x, y) {
 			return _List_fromArray(
 				[
-					A2(
-					$elm$core$Maybe$withDefault,
-					$author$project$Main$OUTOFBOUNDS,
-					A2(
-						$elm_community$list_extra$List$Extra$getAt,
-						y + 0,
-						A2(
-							$elm$core$Maybe$withDefault,
-							_List_fromArray(
-								[$author$project$Main$OUTOFBOUNDS]),
-							A2($elm_community$list_extra$List$Extra$getAt, x + 0, board_list)))),
-					A2(
-					$elm$core$Maybe$withDefault,
-					$author$project$Main$OUTOFBOUNDS,
-					A2(
-						$elm_community$list_extra$List$Extra$getAt,
-						y + 1,
-						A2(
-							$elm$core$Maybe$withDefault,
-							_List_fromArray(
-								[$author$project$Main$OUTOFBOUNDS]),
-							A2($elm_community$list_extra$List$Extra$getAt, x + 1, board_list)))),
-					A2(
-					$elm$core$Maybe$withDefault,
-					$author$project$Main$OUTOFBOUNDS,
-					A2(
-						$elm_community$list_extra$List$Extra$getAt,
-						y + 2,
-						A2(
-							$elm$core$Maybe$withDefault,
-							_List_fromArray(
-								[$author$project$Main$OUTOFBOUNDS]),
-							A2($elm_community$list_extra$List$Extra$getAt, x + 2, board_list)))),
-					A2(
-					$elm$core$Maybe$withDefault,
-					$author$project$Main$OUTOFBOUNDS,
-					A2(
-						$elm_community$list_extra$List$Extra$getAt,
-						y + 3,
-						A2(
-							$elm$core$Maybe$withDefault,
-							_List_fromArray(
-								[$author$project$Main$OUTOFBOUNDS]),
-							A2($elm_community$list_extra$List$Extra$getAt, x + 3, board_list))))
+					A4(xyHelper, x, y, 0, 0),
+					A4(xyHelper, x, y, 1, 1),
+					A4(xyHelper, x, y, 2, 2),
+					A4(xyHelper, x, y, 3, 3)
 				]);
 		});
 	var d2 = F2(
 		function (x, y) {
 			return _List_fromArray(
 				[
-					A2(
-					$elm$core$Maybe$withDefault,
-					$author$project$Main$OUTOFBOUNDS,
-					A2(
-						$elm_community$list_extra$List$Extra$getAt,
-						y + 3,
-						A2(
-							$elm$core$Maybe$withDefault,
-							_List_fromArray(
-								[$author$project$Main$OUTOFBOUNDS]),
-							A2($elm_community$list_extra$List$Extra$getAt, x + 0, board_list)))),
-					A2(
-					$elm$core$Maybe$withDefault,
-					$author$project$Main$OUTOFBOUNDS,
-					A2(
-						$elm_community$list_extra$List$Extra$getAt,
-						y + 2,
-						A2(
-							$elm$core$Maybe$withDefault,
-							_List_fromArray(
-								[$author$project$Main$OUTOFBOUNDS]),
-							A2($elm_community$list_extra$List$Extra$getAt, x + 1, board_list)))),
-					A2(
-					$elm$core$Maybe$withDefault,
-					$author$project$Main$OUTOFBOUNDS,
-					A2(
-						$elm_community$list_extra$List$Extra$getAt,
-						y + 1,
-						A2(
-							$elm$core$Maybe$withDefault,
-							_List_fromArray(
-								[$author$project$Main$OUTOFBOUNDS]),
-							A2($elm_community$list_extra$List$Extra$getAt, x + 2, board_list)))),
-					A2(
-					$elm$core$Maybe$withDefault,
-					$author$project$Main$OUTOFBOUNDS,
-					A2(
-						$elm_community$list_extra$List$Extra$getAt,
-						y + 0,
-						A2(
-							$elm$core$Maybe$withDefault,
-							_List_fromArray(
-								[$author$project$Main$OUTOFBOUNDS]),
-							A2($elm_community$list_extra$List$Extra$getAt, x + 3, board_list))))
+					A4(xyHelper, x, y, 3, 0),
+					A4(xyHelper, x, y, 2, 1),
+					A4(xyHelper, x, y, 1, 2),
+					A4(xyHelper, x, y, 0, 3)
 				]);
 		});
 	var rx = F2(
 		function (x, y) {
 			return _List_fromArray(
 				[
-					A2(
-					$elm$core$Maybe$withDefault,
-					$author$project$Main$OUTOFBOUNDS,
-					A2(
-						$elm_community$list_extra$List$Extra$getAt,
-						y,
-						A2(
-							$elm$core$Maybe$withDefault,
-							_List_fromArray(
-								[$author$project$Main$OUTOFBOUNDS]),
-							A2($elm_community$list_extra$List$Extra$getAt, x + 0, board_list)))),
-					A2(
-					$elm$core$Maybe$withDefault,
-					$author$project$Main$OUTOFBOUNDS,
-					A2(
-						$elm_community$list_extra$List$Extra$getAt,
-						y,
-						A2(
-							$elm$core$Maybe$withDefault,
-							_List_fromArray(
-								[$author$project$Main$OUTOFBOUNDS]),
-							A2($elm_community$list_extra$List$Extra$getAt, x + 1, board_list)))),
-					A2(
-					$elm$core$Maybe$withDefault,
-					$author$project$Main$OUTOFBOUNDS,
-					A2(
-						$elm_community$list_extra$List$Extra$getAt,
-						y,
-						A2(
-							$elm$core$Maybe$withDefault,
-							_List_fromArray(
-								[$author$project$Main$OUTOFBOUNDS]),
-							A2($elm_community$list_extra$List$Extra$getAt, x + 2, board_list)))),
-					A2(
-					$elm$core$Maybe$withDefault,
-					$author$project$Main$OUTOFBOUNDS,
-					A2(
-						$elm_community$list_extra$List$Extra$getAt,
-						y,
-						A2(
-							$elm$core$Maybe$withDefault,
-							_List_fromArray(
-								[$author$project$Main$OUTOFBOUNDS]),
-							A2($elm_community$list_extra$List$Extra$getAt, x + 3, board_list))))
+					A4(xyHelper, x, y, 0, 0),
+					A4(xyHelper, x, y, 0, 1),
+					A4(xyHelper, x, y, 0, 2),
+					A4(xyHelper, x, y, 0, 3)
 				]);
 		});
 	var ry = F2(
 		function (x, y) {
 			return _List_fromArray(
 				[
-					A2(
-					$elm$core$Maybe$withDefault,
-					$author$project$Main$OUTOFBOUNDS,
-					A2(
-						$elm_community$list_extra$List$Extra$getAt,
-						y + 0,
-						A2(
-							$elm$core$Maybe$withDefault,
-							_List_fromArray(
-								[$author$project$Main$OUTOFBOUNDS]),
-							A2($elm_community$list_extra$List$Extra$getAt, x, board_list)))),
-					A2(
-					$elm$core$Maybe$withDefault,
-					$author$project$Main$OUTOFBOUNDS,
-					A2(
-						$elm_community$list_extra$List$Extra$getAt,
-						y + 1,
-						A2(
-							$elm$core$Maybe$withDefault,
-							_List_fromArray(
-								[$author$project$Main$OUTOFBOUNDS]),
-							A2($elm_community$list_extra$List$Extra$getAt, x, board_list)))),
-					A2(
-					$elm$core$Maybe$withDefault,
-					$author$project$Main$OUTOFBOUNDS,
-					A2(
-						$elm_community$list_extra$List$Extra$getAt,
-						y + 2,
-						A2(
-							$elm$core$Maybe$withDefault,
-							_List_fromArray(
-								[$author$project$Main$OUTOFBOUNDS]),
-							A2($elm_community$list_extra$List$Extra$getAt, x, board_list)))),
-					A2(
-					$elm$core$Maybe$withDefault,
-					$author$project$Main$OUTOFBOUNDS,
-					A2(
-						$elm_community$list_extra$List$Extra$getAt,
-						y + 3,
-						A2(
-							$elm$core$Maybe$withDefault,
-							_List_fromArray(
-								[$author$project$Main$OUTOFBOUNDS]),
-							A2($elm_community$list_extra$List$Extra$getAt, x, board_list))))
+					A4(xyHelper, x, y, 0, 0),
+					A4(xyHelper, x, y, 1, 0),
+					A4(xyHelper, x, y, 2, 0),
+					A4(xyHelper, x, y, 3, 0)
 				]);
 		});
 	var checkforWin = F2(
@@ -5788,23 +5637,18 @@ var $author$project$Main$update = F2(
 							winner: $elm$core$Maybe$Nothing
 						}),
 					$elm$core$Platform$Cmd$none);
-			case 'Click':
-				var column = msg.a;
-				return _Utils_eq(model.winner, $elm$core$Maybe$Nothing) ? _Utils_Tuple2(
-					_Utils_update(
-						model,
-						{
-							board: A3($author$project$Main$dropPiece, model.board, column, model.turn)
-						}),
-					A2(
-						$elm$core$Task$perform,
-						$elm$core$Basics$always($author$project$Main$CheckForWinner),
-						$elm$core$Task$succeed(_Utils_Tuple0))) : _Utils_Tuple2(model, $elm$core$Platform$Cmd$none);
 			default:
+				var column = msg.a;
+				var newmodel = _Utils_eq(model.winner, $elm$core$Maybe$Nothing) ? _Utils_update(
+					model,
+					{
+						board: A3($author$project$Main$dropPiece, model.board, column, model.turn)
+					}) : model;
 				return _Utils_Tuple2(
-					_Utils_update(
+					_Utils_eq(model.winner, $elm$core$Maybe$Nothing) ? _Utils_update(
 						model,
 						{
+							board: newmodel.board,
 							turn: function () {
 								var _v1 = model.turn;
 								switch (_v1.$) {
@@ -5816,13 +5660,13 @@ var $author$project$Main$update = F2(
 										return _Debug_todo(
 											'Main',
 											{
-												start: {line: 123, column: 29},
-												end: {line: 123, column: 39}
-											})('unreachable');
+												start: {line: 120, column: 33},
+												end: {line: 120, column: 43}
+											})('branch not implemented');
 								}
 							}(),
-							winner: $author$project$Main$checkForWinner(model)
-						}),
+							winner: $author$project$Main$checkForWinner(newmodel)
+						}) : model,
 					$elm$core$Platform$Cmd$none);
 		}
 	});
@@ -11844,6 +11688,10 @@ var $elm$svg$Svg$Attributes$cx = _VirtualDom_attribute('cx');
 var $elm$svg$Svg$Attributes$cy = _VirtualDom_attribute('cy');
 var $elm$svg$Svg$Attributes$fill = _VirtualDom_attribute('fill');
 var $elm$svg$Svg$Attributes$height = _VirtualDom_attribute('height');
+var $elm$core$Basics$always = F2(
+	function (a, _v0) {
+		return a;
+	});
 var $mdgriffith$elm_ui$Internal$Model$unstyled = A2($elm$core$Basics$composeL, $mdgriffith$elm_ui$Internal$Model$Unstyled, $elm$core$Basics$always);
 var $mdgriffith$elm_ui$Element$html = $mdgriffith$elm_ui$Internal$Model$unstyled;
 var $elm$svg$Svg$Attributes$r = _VirtualDom_attribute('r');
@@ -11999,8 +11847,8 @@ var $author$project$Main$viewCurrentTurn = function (model) {
 					return _Debug_todo(
 						'Main',
 						{
-							start: {line: 329, column: 29},
-							end: {line: 329, column: 39}
+							start: {line: 332, column: 29},
+							end: {line: 332, column: 39}
 						})('Not implemented');
 			}
 		} else {
@@ -12014,8 +11862,8 @@ var $author$project$Main$viewCurrentTurn = function (model) {
 					return _Debug_todo(
 						'Main',
 						{
-							start: {line: 340, column: 29},
-							end: {line: 340, column: 39}
+							start: {line: 343, column: 29},
+							end: {line: 343, column: 39}
 						})('Not implemented');
 			}
 		}
